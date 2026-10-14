@@ -3,7 +3,7 @@
 [![Live App](https://img.shields.io/badge/🚀_Live_App-Open_Wizard-2ea44f?style=for-the-badge)](https://goikelem.github.io/WRF-domain-Wizard/)
 [![GitHub Pages](https://img.shields.io/badge/GitHub_Pages-Online-blue?style=flat-square&logo=github)](https://goikelem.github.io/WRF-domain-Wizard/)
 
-==**[Open the Domain wizard here](https://goikelem.github.io/WRF-domain-Wizard/)**==
+<mark>**[Open the Domain wizard here](https://goikelem.github.io/WRF-domain-Wizard/)**</mark>
 
 **WRF Domain Wizard** is a browser-based, interactive tool designed to simplify the setup of the Weather Research and Forecasting (WRF) model and its Preprocessing System (WPS). 
 
@@ -31,7 +31,7 @@ Instead of manually calculating coordinates and editing text files, users can **
 
 Follow these steps to configure your WRF simulation:
 
-1. **Launch the App:** Open the ==**[Open the Domain wizard here](https://goikelem.github.io/WRF-domain-Wizard/)**==.
+1. **Launch the App:** Open the <mark>**[Open the Domain wizard here](https://goikelem.github.io/WRF-domain-Wizard/)**</mark>.
 2. **Draw the Outer Domain:** Click and drag on the map to draw your outermost domain (**d01**).
 3. **Add Nests:** Add **d02**, **d03**, and additional nested domains as needed for your study.
 4. **Edit Domains:** Select a domain to move or resize it using the map handles. You can also fine-tune extents using the configuration table.
@@ -43,10 +43,24 @@ Follow these steps to configure your WRF simulation:
 
 ---
 
-## :clipboard: Copy-Friendly Installation Commands
+## :clipboard: Quick Start & Installation Guide
 
-*Click the "Copy" button on the top right of the code blocks below to quickly clone and run the project locally.*
+Choose one of the methods below to run or download the application locally on your machine.
 
-### 1. Clone the repository
+### Method 1: Clone the Repository (Recommended)
+Cloning fetches the complete project directory locally so all dependencies and assets work seamlessly offline.
+
 ```bash
+# 1. Clone the repository
 git clone [https://github.com/goikelem/WRF-domain-Wizard.git](https://github.com/goikelem/WRF-domain-Wizard.git)
+
+# 2. Enter the project directory
+cd WRF-domain-Wizard
+
+# 3. Open the application directly in your default browser
+# For Linux:
+xdg-open index.html
+
+
+# For WSL on Windows:
+explorer.exe index.html
