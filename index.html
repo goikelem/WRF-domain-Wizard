@@ -1,82 +1,295 @@
-# :sun_behind_rain_cloud: WRF Domain Wizard: Interactive Domain Configuration
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WRF/WPS Domain Wizard</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<style>
+:root{--bg:#eef3f8;--card:#fff;--ink:#17365d;--line:#c9d6e4;--acc:#1976d2}
+*{box-sizing:border-box}body{margin:0;font:14px/1.4 system-ui,sans-serif;background:var(--bg);color:#1c2733}
+header{background:var(--ink);color:#fff;padding:14px 20px;font-size:18px;font-weight:700}
+main{display:grid;grid-template-columns:minmax(340px,420px) 1fr;gap:12px;padding:12px}
+@media(max-width:900px){main{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:12px}
+h3{margin:0 0 8px;font-size:14px;color:var(--ink)}
+label{display:block;margin:4px 0;font-size:12px}
+input,select{width:100%;padding:4px 6px;border:1px solid var(--line);border-radius:4px;font:inherit}
+table{width:100%;border-collapse:collapse}td,th{padding:2px;font-size:11px;text-align:left}td input{padding:3px}
+button{background:var(--ink);color:#fff;border:0;border-radius:4px;padding:6px 10px;font:inherit;font-weight:600;cursor:pointer;margin:2px}
+button.p{background:var(--acc)}button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+#map{height:560px;border-radius:6px;border:1px solid var(--line)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+textarea{width:100%;height:230px;font:12px/1.3 ui-monospace,monospace;border:1px solid var(--line);border-radius:4px}
+#msg{font-size:12px;min-height:18px;color:var(--ink)}
+.pick{display:flex;gap:4px;align-items:center}.pick button{margin:0;white-space:nowrap}.sq{width:12px;height:12px;background:#fff;border:2px solid #000}
+@media(prefers-color-scheme:dark){:root{--bg:#121a24;--card:#1b2633;--ink:#9cc3f0;--line:#33475d}body{color:#e3ebf3}header{background:#0d2540;color:#fff}input,select,textarea{background:#101a26;color:#e3ebf3}button{color:#0d2540}}
+</style></head><body>
+<header>WRF / WPS Domain Wizard</header>
+<main>
+<section>
+ <div class="card"><h3>Domains</h3>
+  <table><thead><tr><th></th><th>Min lat</th><th>Max lat</th><th>Min lon</th><th>Max lon</th><th>Res km</th></tr></thead><tbody id="rows"></tbody></table>
+  <div><button onclick="addDom()">Add domain</button><button onclick="delDom()">Delete selected</button><button onclick="undo()">Undo</button><button onclick="redo()">Redo</button><button onclick="example()">Example</button></div>
+  <label><input type="checkbox" id="draw" checked style="width:auto"> Draw mode: drag on the map to draw the selected domain (untick to pan, move and resize)</label>
+  <label><input type="checkbox" id="inside" checked style="width:auto"> Keep inside parent</label>
+  <div id="msg">Click a domain to select. Drag the centre square to move, corner squares to resize.</div>
+ </div>
+ <div class="card"><h3>Data and output directories</h3>
+  <label>geog_data_path (WRF_GEOG)<span class="pick"><input id="geog" value="/path/to/WRF_GEOG"><button type="button" onclick="pick('geog')">Browse…</button></span></label>
+  <label>Geogrid output directory<span class="pick"><input id="gdir" value="/path/to/wrf_output/geogrid"><button type="button" onclick="pick('gdir')">Browse…</button></span></label>
+  <label>Ungrib output directory<span class="pick"><input id="udir" value="/path/to/wrf_output/ungrib"><button type="button" onclick="pick('udir')">Browse…</button></span></label>
+  <label>Ungrib file prefix<input id="pre" value="FILE"></label>
+  <label>Metgrid output directory<span class="pick"><input id="mdir" value="/path/to/wrf_output/metgrid"><button type="button" onclick="pick('mdir')">Browse…</button></span></label>
+ </div>
+ <div class="card"><h3>Settings</h3>
+  <label>Projection<select id="proj"><option value="lambert">Lambert Conformal</option><option value="mercator">Mercator</option><option value="polar">Polar Stereographic</option><option value="lat-lon">Latitude-Longitude</option></select></label>
+  <div class="row"><label>Start<input id="start" value="2026-08-01_00:00:00"></label><label>End<input id="end" value="2026-08-03_00:00:00"></label>
+  <label>Met interval (h)<input id="ival" value="6"></label><label>Timestep (s)<input id="dt" value="30"></label>
+  <label>History (min)<input id="hist" value="60"></label><label>Vertical levels<input id="vert" value="45"></label></div>
+  <button class="p" onclick="generate()">Generate namelists</button>
+  <button onclick="saveJSON()">Save project</button>
+  <label>Open project (.json)<input type="file" id="open" accept=".json"></label>
+ </div>
+</section>
+<section>
+ <div id="map"></div>
+ <div class="card" style="margin-top:12px"><h3>namelist.wps <button onclick="cp('wps')">Copy</button><button onclick="dl('wps')">Download</button></h3><textarea id="wps" spellcheck="false"></textarea>
+ <h3>namelist.input <button onclick="cp('nml')">Copy</button><button onclick="dl('nml')">Download</button></h3><textarea id="nml" spellcheck="false"></textarea></div>
+</section>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script>
+const COL=['purple','blue','red','green','orange','brown','teal','magenta','olive'];
+let doms=[{res:'15'}],sel=0,undoS=[],redoS=[],layers=[],handles=[],drawing=null;
+const $=id=>document.getElementById(id),msg=t=>$('msg').textContent=t;
+const map=L.map('map',{worldCopyJump:false}).setView([25,40],4);
+const base={
+ 'Carto Voyager':L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:18,subdomains:'abcd',attribution:'&copy; OpenStreetMap contributors &copy; CARTO'}),
+ 'ESRI World Topo':L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',{maxZoom:18,attribution:'Tiles &copy; Esri'}),
+ 'ESRI World Imagery':L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:18,attribution:'Tiles &copy; Esri'})};
+base['Carto Voyager'].addTo(map);L.control.layers(base).addTo(map);
+const snap=()=>JSON.stringify({doms,proj:$('proj').value});
+function push(){undoS.push(snap());if(undoS.length>100)undoS.shift();redoS=[]}
+function restore(s){const o=JSON.parse(s);doms=o.doms;$('proj').value=o.proj;sel=Math.min(sel,doms.length-1);render()}
+function undo(){if(!undoS.length)return msg('Nothing to undo.');redoS.push(snap());restore(undoS.pop())}
+function redo(){if(!redoS.length)return msg('Nothing to redo.');undoS.push(snap());restore(redoS.pop())}
+const ok=d=>['minlat','maxlat','minlon','maxlon'].every(k=>d[k]!==undefined&&d[k]!==''&&isFinite(+d[k]))&&+d.minlat<+d.maxlat&&+d.minlon<+d.maxlon;
+const B=d=>[+d.minlat,+d.maxlat,+d.minlon,+d.maxlon];
+function setB(i,[a,b,c,e]){Object.assign(doms[i],{minlat:a.toFixed(4),maxlat:b.toFixed(4),minlon:c.toFixed(4),maxlon:e.toFixed(4)})}
+function clampTo(i,[a,b,c,e]){let lo=[-90,90,-180,180];if(i>0&&$('inside').checked&&ok(doms[i-1]))lo=B(doms[i-1]);
+ const k=(v,l,h)=>Math.max(l,Math.min(h,v));return[k(a,lo[0],lo[1]),k(b,lo[0],lo[1]),k(c,lo[2],lo[3]),k(e,lo[2],lo[3])]}
+function render(){
+ $('rows').innerHTML=doms.map((d,i)=>`<tr><td><input type="radio" name="s" style="width:auto" ${i==sel?'checked':''} onchange="sel=${i};draw()"> d${String(i+1).padStart(2,'0')}</td>`+
+  ['minlat','maxlat','minlon','maxlon','res'].map(k=>`<td><input value="${d[k]??''}" onfocus="push()" onchange="doms[${i}].${k}=this.value;draw()"></td>`).join('')+'</tr>').join('');
+ draw()}
+function draw(){
+ layers.forEach(l=>map.removeLayer(l));handles.forEach(l=>map.removeLayer(l));layers=[];handles=[];
+ doms.forEach((d,i)=>{if(!ok(d))return;const[a,b,c,e]=B(d);
+  const r=L.rectangle([[a,c],[b,e]],{color:COL[i%9],weight:i==sel?4:2,fillOpacity:i==sel?.3:.12}).addTo(map);
+  r.bindTooltip('D'+String(i+1).padStart(2,'0'),{permanent:true,direction:'center'});
+  r.on('click',ev=>{L.DomEvent.stopPropagation(ev);sel=i;render()});layers.push(r)});
+ const d=doms[sel];if(d&&ok(d)&&!$('draw').checked){const[a,b,c,e]=B(d);
+  const mk=(lat,lng,fn)=>{const m=L.marker([lat,lng],{draggable:true,icon:L.divIcon({className:'',html:'<div class="sq"></div>',iconSize:[12,12]})}).addTo(map);
+   m.on('dragstart',push);m.on('drag',()=>{fn(m.getLatLng());refresh()});handles.push(m);return m};
+  const[a0,b0,c0,e0]=[a,b,c,e];
+  mk(a,c,p=>setB(sel,clampTo(sel,[Math.min(p.lat,+doms[sel].maxlat-.1),+doms[sel].maxlat,Math.min(p.lng,+doms[sel].maxlon-.1),+doms[sel].maxlon])));
+  mk(a,e,p=>setB(sel,clampTo(sel,[Math.min(p.lat,+doms[sel].maxlat-.1),+doms[sel].maxlat,+doms[sel].minlon,Math.max(p.lng,+doms[sel].minlon+.1)])));
+  mk(b,c,p=>setB(sel,clampTo(sel,[+doms[sel].minlat,Math.max(p.lat,+doms[sel].minlat+.1),Math.min(p.lng,+doms[sel].maxlon-.1),+doms[sel].maxlon])));
+  mk(b,e,p=>setB(sel,clampTo(sel,[+doms[sel].minlat,Math.max(p.lat,+doms[sel].minlat+.1),+doms[sel].minlon,Math.max(p.lng,+doms[sel].minlon+.1)])));
+  let ctr=[(a+b)/2,(c+e)/2],start=null;
+  const m=mk(ctr[0],ctr[1],p=>{if(!start)start={p:[ctr[0],ctr[1]],b:[a0,b0,c0,e0]};let da=p.lat-start.p[0],dc=p.lng-start.p[1];
+    const[x,y,z,w]=start.b;let nb=clampTo(sel,[x+da,y+da,z+dc,w+dc]);
+    if(Math.abs((nb[1]-nb[0])-(y-x))<1e-6&&Math.abs((nb[3]-nb[2])-(w-z))<1e-6)setB(sel,nb)});
+  m.on('dragend',()=>{render()});}
+ handles.forEach(h=>h.on('dragend',()=>render()));
+}
+function refresh(){ // lightweight: update rectangle + table inputs while dragging
+ const d=doms[sel];layers.forEach(l=>map.removeLayer(l));layers=[];
+ doms.forEach((x,i)=>{if(!ok(x))return;const[a,b,c,e]=B(x);layers.push(L.rectangle([[a,c],[b,e]],{color:COL[i%9],weight:i==sel?4:2,fillOpacity:i==sel?.3:.12,interactive:false}).addTo(map))});
+ const inp=$('rows').children[sel].querySelectorAll('input');['minlat','maxlat','minlon','maxlon'].forEach((k,j)=>inp[j+1].value=d[k])}
+function addDom(){if(doms.length>=9)return msg('Maximum 9 domains.');push();const r=parseFloat(doms[doms.length-1].res)/3;doms.push({res:isFinite(r)?String(+r.toPrecision(4)):'5'});sel=doms.length-1;$('draw').checked=true;render();msg('Added d'+(sel+1)+'. Draw mode on: drag a box inside its parent.')}
+function delDom(){if(doms.length==1){push();doms[0]={res:doms[0].res};}else{push();doms.splice(sel,1);sel=Math.max(0,sel-1)}render()}
+function example(){push();doms=[[-3.0627,19.7253,29.9502,52.0498,'15'],[-0.1085,14.9522,32.9059,48.9577,'5'],[1.8768,6.9379,34.8915,40.8787,'1.667']].map(v=>({minlat:v[0],maxlat:v[1],minlon:v[2],maxlon:v[3],res:v[4]}));sel=0;$('draw').checked=false;render();map.fitBounds([[-3,29.9],[19.7,52]])}
+function setDraw(){const on=$('draw').checked;on?map.dragging.disable():map.dragging.enable();map.getContainer().style.cursor=on?'crosshair':'';draw()}
+$('draw').onchange=()=>{setDraw();msg($('draw').checked?'Draw mode ON: drag a rectangle on the map for d'+(sel+1):'Draw mode off.')};
+let lastPt=null,edgeTimer=null;
+const curLL=()=>map.containerPointToLatLng(lastPt);
+map.on('mousedown',e=>{if(!$('draw').checked||e.originalEvent.button!==0)return;
+ drawing={s:e.latlng,r:L.rectangle([e.latlng,e.latlng],{color:'#000',dashArray:'5',fill:false}).addTo(map)};lastPt=e.containerPoint;
+ edgeTimer=setInterval(()=>{if(!drawing)return;const z=map.getSize(),m=40,sp=16;let dx=0,dy=0;
+  if(lastPt.x<m)dx=-sp;else if(lastPt.x>z.x-m)dx=sp;if(lastPt.y<m)dy=-sp;else if(lastPt.y>z.y-m)dy=sp;
+  if(dx||dy){map.panBy([dx,dy],{animate:false});drawing.r.setBounds([drawing.s,curLL()])}},40)});
+window.addEventListener('mousemove',ev=>{if(!drawing)return;const r=map.getContainer().getBoundingClientRect();
+ lastPt=L.point(ev.clientX-r.left,ev.clientY-r.top);drawing.r.setBounds([drawing.s,curLL()])});
+window.addEventListener('mouseup',()=>{if(!drawing)return;clearInterval(edgeTimer);const s=drawing.s,e=curLL();map.removeLayer(drawing.r);drawing=null;
+ const b=clampTo(sel,[Math.min(s.lat,e.lat),Math.max(s.lat,e.lat),Math.min(s.lng,e.lng),Math.max(s.lng,e.lng)]);
+ if(b[1]-b[0]>.05&&b[3]-b[2]>.05){push();setB(sel,b);const nx=doms.findIndex((d,j)=>j>sel&&!ok(d));
+  if(nx>=0){sel=nx;msg('Domain drawn. Now draw d0'+(nx+1)+'.')}else{$('draw').checked=false;msg('Domain drawn. Draw mode off: drag the squares to fine-tune, or click Add domain to draw another.')}
+  setDraw();render()}});
+$('proj').onchange=()=>{push()};
+function saveJSON(){download('wrf_domains.json',JSON.stringify({doms,proj:$('proj').value,t:Object.fromEntries(['start','end','ival','dt','hist','vert','geog','gdir','udir','pre','mdir'].map(k=>[k,$(k).value]))},null,2))}
+$('open').onchange=async e=>{try{const o=JSON.parse(await e.target.files[0].text());push();doms=o.doms;$('proj').value=o.proj||'lambert';Object.entries(o.t||{}).forEach(([k,v])=>$(k).value=v);sel=0;render();msg('Project opened.')}catch(x){msg('Cannot open file: '+x.message)}};
+function download(n,t){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/plain'}));a.download=n;a.click()}
+async function cp(k){const t=$(k).value,n=k=='wps'?'namelist.wps':'namelist.input';if(!t)return msg('Click Generate namelists first.');
+ try{await navigator.clipboard.writeText(t)}catch(x){$(k).select();document.execCommand('copy')}msg('Copied '+n+' to the clipboard.')}
+async function pick(id){let name=null;
+ try{if(!window.showDirectoryPicker)throw 0;name=(await showDirectoryPicker()).name}
+ catch(e){if(e&&e.name=='AbortError')return;
+  name=await new Promise(res=>{const i=document.createElement('input');i.type='file';i.webkitdirectory=true;i.onchange=()=>res(i.files[0]?i.files[0].webkitRelativePath.split('/')[0]:null);i.oncancel=()=>res(null);i.click()})}
+ if(!name)return;const f=$(id),v=f.value.trim().replace(/\/+$/,''),k=v.lastIndexOf('/');
+ f.value=k>=0?v.slice(0,k)+'/'+name:name;msg('Folder "'+name+'" set. Browsers hide the full path, so check the parent path in the box.')}
+const dl=k=>download(k=='wps'?'namelist.wps':'namelist.input',$(k).value);
+const even=v=>{v=Math.max(20,Math.ceil(v));return v%2?v+1:v};
+const align=(v,r)=>{v=Math.max(20,Math.ceil(v));const m=(v-1)%r;return m?v+r-m:v};
+const pd=(s,l)=>{const m=/^(\d{4})-(\d\d)-(\d\d)_(\d\d):(\d\d):(\d\d)$/.exec(s.trim());if(!m)throw Error(l+' must be YYYY-MM-DD_HH:MM:SS');return{p:m.slice(1).map(Number),t:Date.UTC(m[1],m[2]-1,m[3],m[4],m[5],m[6])}};
+function generate(){try{
+ const n=doms.length,S=pd($('start').value,'Start'),E=pd($('end').value,'End');if(E.t<=S.t)throw Error('End must be after start.');
+ const ival=+$('ival').value,dt=+$('dt').value,hist=+$('hist').value,vert=$('vert').value;
+ if(!(ival>0&&dt>0&&hist>0))throw Error('Interval, timestep and history must be positive.');
+ const D=doms.map((d,i)=>{if(!ok(d)||!(+d.res>0))throw Error('Domain d0'+(i+1)+' needs valid extents and resolution (draw it or type it).');return{a:+d.minlat,b:+d.maxlat,c:+d.minlon,e:+d.maxlon,res:+d.res}});
+ const d1=D[0],mid=(d1.a+d1.b)/2,cl=Math.cos(mid*Math.PI/180),cv=(x,l,h)=>Math.max(l,Math.min(h,x)),pj=$('proj').value;
+ const refLon=(d1.c+d1.e)/2;let t1,t2;
+ if(pj=='lambert'){t1=cv(d1.a+(d1.b-d1.a)/6,-89,89);t2=cv(d1.b-(d1.b-d1.a)/6,-89,89)}else if(pj=='mercator'){t1=cv(mid,-89,89);t2=0}else if(pj=='polar'){t1=mid>=0?60:-60;t2=0}else{t1=t2=0}
+ const dxb=Math.round(d1.res*1000),e0=even(111.32*(d1.e-d1.c)*cl/d1.res+1),s0=even(111.32*(d1.b-d1.a)/d1.res+1);
+ let swLon=refLon-(e0/2)*(dxb/(111320*cl)),swLat=mid-(s0/2)*(dxb/111320),pLat=mid,pdx=dxb;
+ const A={pid:[],rat:[],ist:[],jst:[],we:[],sn:[],dx:[]};
+ D.forEach((d,i)=>{if(i==0){A.pid.push(1);A.rat.push(1);A.ist.push(1);A.jst.push(1);A.we.push(e0);A.sn.push(s0);A.dx.push(dxb);return}
+  let r=Math.round(pdx/(d.res*1000));if(r<2)r=3;const dxi=Math.round(d.res*1000),m=(d.a+d.b)/2;
+  A.we.push(align(111.32*(d.e-d.c)*Math.cos(m*Math.PI/180)/d.res+1,r));A.sn.push(align(111.32*(d.b-d.a)/d.res+1,r));
+  A.ist.push(Math.max(1,1+Math.round(111.32*(d.c-swLon)*Math.cos(pLat*Math.PI/180)*1000/pdx)));A.jst.push(Math.max(1,1+Math.round(111.32*(d.a-swLat)*1000/pdx)));
+  A.pid.push(i);A.rat.push(r);A.dx.push(dxi);swLon=d.c;swLat=d.a;pLat=m;pdx=dxi});
+ const warn=[];for(let i=1;i<n;i++){const p=A.pid[i]-1,r=A.rat[i];if(A.ist[i]+(A.we[i]-1)/r>A.we[p]||A.jst[i]+(A.sn[i]-1)/r>A.sn[p])warn.push(`d0${i+1} does not fit inside d0${p+1}; move or shrink it.`)}
+ const J=(a)=>a.join(', '),R=x=>J(Array(n).fill(x)),sq=x=>J(Array(n).fill("'"+x+"'"));
+ const g=$('geog').value,gd=$('gdir').value.replace(/\/$/,''),md=$('mdir').value.replace(/\/$/,''),pre=$('udir').value.replace(/\/$/,'')+'/'+$('pre').value,st=$('start').value,en=$('end').value;
+ const wps=`&share
+ wrf_core = 'ARW',
+ max_dom = ${n},
+ start_date = ${sq(st)},
+ end_date   = ${sq(en)},
+ interval_seconds = ${ival*3600},
+ io_form_geogrid = 2,
+ opt_output_from_geogrid_path = '${gd}/',
+/
 
-[![Live App](https://img.shields.io/badge/🚀_Live_App-Open_Wizard-2ea44f?style=for-the-badge)](https://goikelem.github.io/WRF-domain-Wizard/)
-[![GitHub Pages](https://img.shields.io/badge/GitHub_Pages-Online-blue?style=flat-square&logo=github)](https://goikelem.github.io/WRF-domain-Wizard/)
+&geogrid
+ parent_id         = ${J(A.pid)},
+ parent_grid_ratio = ${J(A.rat)},
+ i_parent_start    = ${J(A.ist)},
+ j_parent_start    = ${J(A.jst)},
+ e_we              = ${J(A.we)},
+ e_sn              = ${J(A.sn)},
+ geog_data_res     = ${J(Array(n).fill("'default'"))},
+ dx = ${dxb},
+ dy = ${dxb},
+ map_proj = '${pj}',
+ ref_lat = ${mid.toFixed(5)},
+ ref_lon = ${refLon.toFixed(5)},
+ truelat1 = ${t1.toFixed(5)},
+ truelat2 = ${t2.toFixed(5)},
+ stand_lon = ${refLon.toFixed(5)},
+ geog_data_path = '${g}',
+/
 
-==**[Open the Domain wizard here](https://goikelem.github.io/WRF-domain-Wizard/)**==
+&ungrib
+ out_format = 'WPS',
+ prefix = '${pre}',
+/
 
-**WRF Domain Wizard** is a browser-based, interactive tool designed to simplify the setup of the Weather Research and Forecasting (WRF) model and its Preprocessing System (WPS). 
+&metgrid
+ fg_name = '${pre}',
+ io_form_metgrid = 2,
+ opt_output_from_metgrid_path = '${md}/',
+/
+`;
+ const tot=(E.t-S.t)/1000,dd=Math.floor(tot/86400),hh=Math.floor(tot%86400/3600),mm=Math.floor(tot%3600/60),ss=tot%60,sp=S.p,ep=E.p;
+ const nml=`&time_control
+ run_days = ${dd},
+ run_hours = ${hh},
+ run_minutes = ${mm},
+ run_seconds = ${ss},
+ start_year = ${R(sp[0])},
+ start_month = ${R(sp[1])},
+ start_day = ${R(sp[2])},
+ start_hour = ${R(sp[3])},
+ start_minute = ${R(sp[4])},
+ start_second = ${R(sp[5])},
+ end_year = ${R(ep[0])},
+ end_month = ${R(ep[1])},
+ end_day = ${R(ep[2])},
+ end_hour = ${R(ep[3])},
+ end_minute = ${R(ep[4])},
+ end_second = ${R(ep[5])},
+ interval_seconds = ${ival*3600},
+ input_from_file = ${R('.true.')},
+ history_interval = ${R(hist)},
+ frames_per_outfile = 1,
+ restart = .false.,
+ restart_interval = 1440,
+ io_form_history = 2,
+ io_form_restart = 2,
+ io_form_input = 2,
+ io_form_boundary = 2,
+/
 
-Instead of manually calculating coordinates and editing text files, users can **draw, move, and resize nested domains directly on an interactive map**. The tool processes all configurations client-side (in your browser) and generates ready-to-use `namelist.wps` and `namelist.input` files.
+&domains
+ time_step = ${dt},
+ time_step_fract_num = 0,
+ time_step_fract_den = 1,
+ max_dom = ${n},
+ e_we = ${J(A.we)},
+ e_sn = ${J(A.sn)},
+ e_vert = ${R(vert)},
+ p_top_requested = 5000,
+ num_metgrid_levels = 34,
+ num_metgrid_soil_levels = 4,
+ dx = ${J(A.dx)},
+ dy = ${J(A.dx)},
+ grid_id = ${J(D.map((_,i)=>i+1))},
+ parent_id = ${J(A.pid)},
+ i_parent_start = ${J(A.ist)},
+ j_parent_start = ${J(A.jst)},
+ parent_grid_ratio = ${J(A.rat)},
+ parent_time_step_ratio = ${J(A.rat)},
+ feedback = ${n==1?0:1},
+ smooth_option = 0,
+/
 
----
+&physics
+ mp_physics = ${R(8)},
+ ra_lw_physics = ${R(4)},
+ ra_sw_physics = ${R(4)},
+ bl_pbl_physics = ${R(1)},
+ sf_sfclay_physics = ${R(1)},
+ sf_surface_physics = ${R(2)},
+ cu_physics = ${J(D.map((_,i)=>i?0:1))},
+/
 
-## :sparkles: Key Features
+&dynamics
+ hybrid_opt = 2,
+ w_damping = 1,
+ diff_opt = 1,
+ km_opt = 4,
+ damp_opt = 3,
+ zdamp = 5000.,
+ dampcoef = 0.2,
+ non_hydrostatic = .true.,
+ moist_adv_opt = 1,
+ scalar_adv_opt = 1,
+/
 
-| Icon | Feature | Description |
-|:---:|:---|:---|
-| :map: | **Interactive Domain Drawing** | Draw domain rectangles by clicking and dragging. Move via center handles, resize via corner handles. |
-| :globe_with_meridians: | **Multiple Projections** | Supports Lambert Conformal, Mercator, Polar Stereographic, and Latitude–Longitude projections. |
-| :jigsaw: | **Nested Domains** | Configure and manage up to 9 nested domains (d01, d02, etc.) with "Keep inside parent" constraints. |
-| :gear: | **Full WRF/WPS Config** | Set simulation dates, timesteps, vertical levels, grid dimensions, and directory paths. |
-| :clipboard: | **Copy & Download** | Generate, preview, edit, copy to clipboard, and download your namelists directly from the browser. |
-| :floppy_disk: | **Project Management** | Save your domain configurations as JSON files and reopen them later to continue editing. |
-| :leftwards_arrow_with_hook: | **Undo & Redo** | Easily reverse or restore domain edits without losing your progress. |
-| :earth_africa: | **Map Layers** | Switch between Carto Voyager, Esri World Topographic, and Esri World Imagery basemaps. |
-| :lock: | **Client-Side Privacy** | No server-side processing. Your settings are processed entirely in your browser. |
+&bdy_control
+ spec_bdy_width = 5,
+ spec_zone = 1,
+ relax_zone = 4,
+ specified = .true.,
+ nested = ${n==1?'.false.':'.true.'},
+/
 
----
-
-## :desktop_computer: How to Use the Wizard
-
-Follow these steps to configure your WRF simulation:
-
-1. **Launch the App:** Open the ==**[Open the Domain wizard here](https://goikelem.github.io/WRF-domain-Wizard/)**==.
-2. **Draw the Outer Domain:** Click and drag on the map to draw your outermost domain (**d01**).
-3. **Add Nests:** Add **d02**, **d03**, and additional nested domains as needed for your study.
-4. **Edit Domains:** Select a domain to move or resize it using the map handles. You can also fine-tune extents using the configuration table.
-5. **Configure Settings:** Set your map projection, grid settings, simulation start/end times, and file paths (geogrid, ungrib, metgrid).
-6. **Generate Namelists:** Click the **Generate namelists** button.
-7. **Review & Edit:** Preview the generated `namelist.wps` and `namelist.input`. Use the **Edit** feature to make manual tweaks.
-8. **Export:** Use the **Copy** or **Download** buttons to save your configuration.
-9. **Run WPS/WRF:** Take your downloaded files to your HPC or local system, run `geogrid.exe` to verify grids, and proceed with your WRF simulation.
-
----
-
-## :clipboard: Quick Start & Installation Guide
-
-Choose one of the methods below to run or download the application locally on your machine.
-
-### Method 1: Clone the Repository (Recommended)
-Cloning fetches the complete project directory locally so all dependencies and assets work seamlessly offline.
-
-```bash
-# Method 1: 
-# 1. Clone the repository
-git clone [https://github.com/goikelem/WRF-domain-Wizard.git](https://github.com/goikelem/WRF-domain-Wizard.git)
-
-# Enter the project directory
-cd WRF-domain-Wizard
-
-# Method 2:
- Direct Single-File Download (wget or curl)
-# If you only need to download the standalone index.html file directly from the web or GitHub repository:
-# If you want to use crul or wget 
-# Option A: Download the GitHub Pages live version using wget
-wget -O index.html [https://goikelem.github.io/WRF-domain-Wizard/](https://goikelem.github.io/WRF-domain-Wizard/)
-
-# Option B: Download the raw source file directly from the GitHub repository using curl
-curl -O [https://raw.githubusercontent.com/goikelem/WRF-domain-Wizard/main/index.html](https://raw.githubusercontent.com/goikelem/WRF-domain-Wizard/main/index.html)
-# 3. Open the application directly in your default browser
-# For Linux:
-xdg-open index.html
-
-# For WSL on Windows:
-explorer.exe index.html
-# Method 3: Run a Local HTTP Server
-# Opening local HTML files directly in a browser can sometimes trigger restrictive browser security policies (such as CORS or local file restrictions). Running a quick local server resolves these issues:
-# 1. Navigate to the project directory
-cd WRF-domain-Wizard
-
-# 2. Start a simple Python HTTP server on port 8000
-python3 -m http.server 8000
+&namelist_quilt
+ nio_tasks_per_group = 0,
+ nio_groups = 1,
+/
+`;
+ $('wps').value=wps;$('nml').value=nml;msg(warn.length?'Generated with warnings: '+warn.join(' '):'Namelists generated. Review, edit and download below.');
+}catch(x){msg('Cannot generate: '+x.message)}}
+render();setDraw();
+</script></body></html>
