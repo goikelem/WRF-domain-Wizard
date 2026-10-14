@@ -20,7 +20,7 @@ button.p{background:var(--acc)}button:focus-visible,input:focus-visible{outline:
 .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 textarea{width:100%;height:230px;font:12px/1.3 ui-monospace,monospace;border:1px solid var(--line);border-radius:4px}
 #msg{font-size:12px;min-height:18px;color:var(--ink)}
-.pick{display:flex;gap:4px;align-items:center}.pick button{margin:0;white-space:nowrap}.sq{width:12px;height:12px;background:#fff;border:2px solid #000}
+.pick{display:flex;gap:4px;align-items:center}.pick button{margin:0;white-space:nowrap}.navpad{display:grid;grid-template-columns:repeat(3,30px);gap:2px;background:#fffd;padding:4px;border-radius:6px;box-shadow:0 1px 4px #0005}.navpad button{margin:0;padding:0;width:30px;height:30px;background:#17365d;color:#fff;font-size:14px}.navpad button:hover{background:#1976d2}.sq{width:12px;height:12px;background:#fff;border:2px solid #000}
 @media(prefers-color-scheme:dark){:root{--bg:#121a24;--card:#1b2633;--ink:#9cc3f0;--line:#33475d}body{color:#e3ebf3}header{background:#0d2540;color:#fff}input,select,textarea{background:#101a26;color:#e3ebf3}button{color:#0d2540}}
 </style></head><body>
 <header>WRF / WPS Domain Wizard</header>
@@ -61,12 +61,23 @@ textarea{width:100%;height:230px;font:12px/1.3 ui-monospace,monospace;border:1px
 const COL=['purple','blue','red','green','orange','brown','teal','magenta','olive'];
 let doms=[{res:'15'}],sel=0,undoS=[],redoS=[],layers=[],handles=[],drawing=null;
 const $=id=>document.getElementById(id),msg=t=>$('msg').textContent=t;
-const map=L.map('map',{worldCopyJump:false}).setView([25,40],4);
+const map=L.map('map',{worldCopyJump:false,zoomControl:false}).setView([25,40],4);
 const base={
- 'Carto Voyager':L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{maxZoom:18,subdomains:'abcd',attribution:'&copy; OpenStreetMap contributors &copy; CARTO'}),
  'ESRI World Topo':L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',{maxZoom:18,attribution:'Tiles &copy; Esri'}),
  'ESRI World Imagery':L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:18,attribution:'Tiles &copy; Esri'})};
-base['Carto Voyager'].addTo(map);L.control.layers(base).addTo(map);
+base['ESRI World Topo'].addTo(map);L.control.layers(base).addTo(map);
+const nav=L.control({position:'topleft'});
+nav.onAdd=()=>{const d=L.DomUtil.create('div','navpad');
+ d.innerHTML='<i></i><button data-a="up" title="Pan up" aria-label="Pan up">&#9650;</button><button data-a="in" title="Zoom in" aria-label="Zoom in">+</button>'+
+  '<button data-a="left" title="Pan left" aria-label="Pan left">&#9664;</button><button data-a="fit" title="Fit to domains" aria-label="Fit to domains">&#8962;</button><button data-a="right" title="Pan right" aria-label="Pan right">&#9654;</button>'+
+  '<i></i><button data-a="down" title="Pan down" aria-label="Pan down">&#9660;</button><button data-a="out" title="Zoom out" aria-label="Zoom out">&minus;</button>';
+ L.DomEvent.disableClickPropagation(d);
+ d.addEventListener('click',e=>{const a=e.target.dataset&&e.target.dataset.a;if(!a)return;const z=map.getSize(),st=Math.round(Math.min(z.x,z.y)*.3);
+  if(a=='up')map.panBy([0,-st]);else if(a=='down')map.panBy([0,st]);else if(a=='left')map.panBy([-st,0]);else if(a=='right')map.panBy([st,0]);
+  else if(a=='in')map.zoomIn();else if(a=='out')map.zoomOut();
+  else{const v=doms.filter(ok).map(B);if(v.length)map.fitBounds([[Math.min(...v.map(x=>x[0])),Math.min(...v.map(x=>x[2]))],[Math.max(...v.map(x=>x[1])),Math.max(...v.map(x=>x[3]))]])}});
+ return d};
+nav.addTo(map);
 const snap=()=>JSON.stringify({doms,proj:$('proj').value});
 function push(){undoS.push(snap());if(undoS.length>100)undoS.shift();redoS=[]}
 function restore(s){const o=JSON.parse(s);doms=o.doms;$('proj').value=o.proj;sel=Math.min(sel,doms.length-1);render()}
