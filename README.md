@@ -18,6 +18,8 @@ Browser-based WRF/WPS Domain Wizard. Draw nested domains on an interactive map w
 - Save and open projects as `.json`.
 - Built-in 3-domain example (15 km, 5 km, 1.667 km).
 
+See the [step-by-step user guide](docs/USER_GUIDE.md) for screenshots and details.
+
 ## How to use
 
 1. Open the app. Draw mode is on, so drag a rectangle on the map for d01.
