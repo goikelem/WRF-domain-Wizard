@@ -1,10 +1,8 @@
 # :sun_behind_rain_cloud: WRF Domain Wizard: Interactive Domain Configuration
 
-![](https://img.shields.io/badge/🚀_Live_App-Open_Wizard-2ea44f?style=for-the-badge)
-![](https://img.shields.io/badge/GitHub_Pages-Online-blue?style=flat-square&logo=github)
-![](https://img.shields.io/badge/WRF-4.x-orange?style=flat-square)
-![](https://img.shields.io/badge/WPS-Domain_Setup-purple?style=flat-square)
-![](https://img.shields.io/badge/Maps-Leaflet-green?style=flat-square&logo=leaflet)
+![](https://goikelem.github.io/WRF-domain-Wizard/)
+![](https://goikelem.github.io/WRF-domain-Wizard/)
+
 
 **WRF Domain Wizard** is a browser-based, interactive tool designed to simplify the setup of the Weather Research and Forecasting (WRF) model and its Preprocessing System (WPS). 
 
