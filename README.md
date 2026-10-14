@@ -1,239 +1,110 @@
-🌦️ WRF Domain Wizard
+Here is the complete Markdown file. You can copy the raw text below and save it as `README.md` (or any other `.md` file) in your repository.
 
-Interactive WRF/WPS Domain Configuration Tool
+```markdown
+# 🌦️ WRF Domain Wizard: Interactive Domain Configuration
 
+[![Live App](https://img.shields.io/badge/🚀_Live_App-Open_Wizard-2ea44f?style=for-the-badge)](https://goikelem.github.io/WRF-domain-Wizard/)
+[![GitHub Pages](https://img.shields.io/badge/GitHub_Pages-Online-blue?style=flat-square&logo=github)](https://goikelem.github.io/WRF-domain-Wizard/)
+[![WRF](https://img.shields.io/badge/WRF-4.x-orange?style=flat-square)](https://github.com/wrf-model/WRF)
+[![WPS](https://img.shields.io/badge/WPS-Domain_Setup-purple?style=flat-square)](https://github.com/wrf-model/WPS)
+[![Maps](https://img.shields.io/badge/Maps-Leaflet-green?style=flat-square&logo=leaflet)](https://leafletjs.com/)
 
+**WRF Domain Wizard** is a browser-based, interactive tool designed to simplify the setup of the Weather Research and Forecasting (WRF) model and its Preprocessing System (WPS). 
 
+Instead of manually calculating coordinates and editing text files, users can **draw, move, and resize nested domains directly on an interactive map**. The tool processes all configurations client-side (in your browser) and generates ready-to-use `namelist.wps` and `namelist.input` files.
 
+---
 
+## ✨ Key Features
 
+| Icon | Feature | Description |
+|:---:|:---|:---|
+| 🗺️ | **Interactive Domain Drawing** | Draw domain rectangles by clicking and dragging. Move via center handles, resize via corner handles. |
+| 🌐 | **Multiple Projections** | Supports Lambert Conformal, Mercator, Polar Stereographic, and Latitude–Longitude projections. |
+| 🧩 | **Nested Domains** | Configure and manage up to 9 nested domains (d01, d02, etc.) with "Keep inside parent" constraints. |
+| ⚙️ | **Full WRF/WPS Config** | Set simulation dates, timesteps, vertical levels, grid dimensions, and directory paths. |
+| 📋 | **Copy & Download** | Generate, preview, edit, copy to clipboard, and download your namelists directly from the browser. |
+| 💾 | **Project Management** | Save your domain configurations as JSON files and reopen them later to continue editing. |
+| ↩️ | **Undo & Redo** | Easily reverse or restore domain edits without losing your progress. |
+| 🌍 | **Map Layers** | Switch between Carto Voyager, Esri World Topographic, and Esri World Imagery basemaps. |
+| 🔒 | **Client-Side Privacy** | No server-side processing. Your settings are processed entirely in your browser. |
 
+---
 
-WRF Domain Wizard is a browser-based tool for interactively designing Weather Research and Forecasting (WRF) model domains and configuring the Weather Research and Forecasting Preprocessing System (WPS).
+## 🖥️ How to Use the Wizard
 
-Draw, move, and resize nested domains directly on an interactive map. Configure projections, grid settings, simulation dates, and directory paths, then generate, preview, copy, and download your namelist.wps and namelist.input files.
+Follow these steps to configure your WRF simulation:
 
-No server-side processing is required. The application runs in your browser from a single index.html file. Map tiles and libraries require an internet connection.
+1. **Launch the App:** Open the [Live WRF Domain Wizard](https://goikelem.github.io/WRF-domain-Wizard/).
+2. **Draw the Outer Domain:** Click and drag on the map to draw your outermost domain (**d01**).
+3. **Add Nests:** Add **d02**, **d03**, and additional nested domains as needed for your study.
+4. **Edit Domains:** Select a domain to move or resize it using the map handles. You can also fine-tune extents using the configuration table.
+5. **Configure Settings:** Set your map projection, grid settings, simulation start/end times, and file paths (geogrid, ungrib, metgrid).
+6. **Generate Namelists:** Click the **Generate namelists** button.
+7. **Review & Edit:** Preview the generated `namelist.wps` and `namelist.input`. Use the **Edit** feature to make manual tweaks.
+8. **Export:** Use the **Copy** or **Download** buttons to save your configuration.
+9. **Run WPS/WRF:** Take your downloaded files to your HPC or local system, run `geogrid.exe` to verify grids, and proceed with your WRF simulation.
 
-🚀 Open the Live Application
+---
 
-Launch WRF Domain Wizard →
+## 📋 Copy-Friendly Installation Commands
 
-Feature
+*Click the "Copy" button on the top right of the code blocks below to quickly clone and run the project locally.*
 
-Description
-
-🗺️ Interactive mapping
-
-Draw and edit domains directly on the map
-
-🌐 Multiple projections
-
-Lambert Conformal, Mercator, Polar Stereographic, and Latitude–Longitude
-
-🧩 Nested domains
-
-Configure up to 9 domains
-
-📋 Copy to clipboard
-
-Copy generated namelists or important configuration values
-
-📥 Download files
-
-Save generated WRF/WPS configuration files
-
-💾 Project management
-
-Save and reopen projects as JSON
-
-↩️ Undo and redo
-
-Reverse or restore domain edits
-
-🔒 Client-side operation
-
-Domain settings are processed in your browser
-
-✨ Key Features
-
-🗺️ 1. Interactive Domain Drawing
-
-Draw domain rectangles by clicking and dragging the mouse.
-
-Move domains using their centre handles.
-
-Resize domains using corner handles.
-
-Automatically pan the map when drawing near its edges.
-
-Enable Keep inside parent to help constrain nested domains.
-
-Edit domain extents using the configuration table.
-
-Add, remove, and manage multiple nested domains.
-
-🌍 2. Map Layers
-
-Switch between different basemaps to identify suitable WRF model domains:
-
-Carto Voyager
-
-Esri World Topographic Map
-
-Esri World Imagery
-
-🧭 3. Projection Configuration
-
-Choose from four supported map projections:
-
-Lambert Conformal
-
-Mercator
-
-Polar Stereographic
-
-Latitude–Longitude
-
-⚙️ 4. WRF/WPS Configuration
-
-Configure the main simulation and preprocessing settings:
-
-Start and end dates and times
-
-Meteorological input interval
-
-WRF integration timestep
-
-History output interval
-
-Vertical model levels
-
-Domain grid dimensions and nesting parameters
-
-Geographic data directory
-
-Geogrid output directory
-
-Ungrib input directory and file prefix
-
-Metgrid output directory
-
-📄 5. Generate and Copy Namelists
-
-Generate editable previews of:
-
-namelist.wps
-
-namelist.input
-
-Quick actions:
-
-📋 Copy — Copy the generated configuration to your clipboard.
-
-📥 Download — Save the configuration as a file.
-
-✏️ Edit — Modify the generated text before saving.
-
-🔄 Regenerate — Update the output after changing settings.
-
-GitHub automatically provides a copy button on fenced code blocks below, allowing you to copy commands and configuration examples quickly.
-
-💾 6. Save and Reopen Projects
-
-Save domain configurations as JSON project files and reopen them later to continue editing your setup.
-
-🧪 7. Built-in Example
-
-Load the built-in three-domain example:
-
-Domain
-
-Approximate grid spacing
-
-d01
-
-15 km
-
-d02
-
-5 km
-
-d03
-
-1.667 km
-
-These are example nominal grid spacings. Actual grid geometry depends on the configured projection, dimensions, and nesting ratios.
-
-🖥️ How to Use the Wizard
-
-Open the live application.
-
-Draw the outer domain, d01, by dragging a rectangle on the map.
-
-Add d02, d03, and additional nested domains as needed.
-
-Select a domain to move or resize it using the available handles.
-
-Configure the projection, grid settings, simulation period, and file paths.
-
-Click Generate namelists.
-
-Review and edit the generated namelist.wps and namelist.input.
-
-Use Copy or Download to save the configuration.
-
-Run WPS and inspect the generated domain grids before running WRF.
-
-📘 Documentation: Read the step-by-step User Guide.
-
-📋 Copy-Friendly Installation and Launch Commands
-
-1. Clone the repository
-
-Copy the command below using GitHub's code-block copy button.
-
+### 1. Clone the repository
+```bash
 git clone https://github.com/goikelem/WRF-domain-Wizard.git
+```
 
-2. Enter the project directory
-
+### 2. Enter the project directory
+```bash
 cd WRF-domain-Wizard
+```
 
-3. Check that the application exists
-
-ls -lh index.html
-
-4. Open in your default Linux browser
-
+### 3. Open the application in your browser
+```bash
+# For Linux:
 xdg-open index.html
 
-5. Open from WSL on Windows
-
+# For WSL on Windows:
 explorer.exe index.html
+```
 
-Alternatively, open the file directly in Microsoft Edge:
-
-explorer.exe "$(wslpath -w "$PWD/index.html")"
-
-6. Run a local HTTP server if needed
-
-If the application uses JavaScript modules or local resources that do not work when opening index.html directly, start a local server:
-
+### 4. (Optional) Run a local HTTP server
+If you encounter issues opening the HTML file directly, start a local server:
+```bash
 python3 -m http.server 8000
+```
+Then, navigate to **http://localhost:8000** in your browser.
 
-Then open:
+---
 
-http://localhost:8000
+## ⚠️ Important Technical Notes
 
-Keep the terminal running while using the application. Press Ctrl+C to stop the server.
+* **Directory paths and browser limitations:** Browsers restrict access to local files. The **Browse** buttons preserve the existing path prefix and replace the final component with the selected folder. Check the resulting path before generating your namelists.
+* **Nesting calculations:** The nesting calculations are approximate and based on the drawn lat/lon rectangles. Always check `e_we`, `e_sn`, `parent_grid_ratio`, and `i_parent_start` before running a real simulation.
+* **Client-side privacy:** The wizard does not require a backend server. However, map tiles and external libraries may be requested from their respective providers.
 
-📁 Project Structure
+---
 
-WRF-domain-Wizard/
-├── index.html           # Main browser-based application
-├── README.md            # Project documentation
-├── LICENSE              # License, if included
-└── docs/
-    └── USER_GUIDE.md    # Step-by-step documentation
+## 🗺️ Credits
 
-The LICENSE and docs/USER_GUIDE.md entries should exist in the repository for these links and paths to work.
+* **Map library:** [Leaflet](https://leafletjs.com/)
+* **Map providers:** [CARTO](https://carto.com/), [Esri](https://www.esri.com/), and OpenStreetMap contributors.
+* **Modeling systems:** [WRF](https://github.com/wrf-model/WRF) and [WPS](https://github.com/wrf-model/WPS).
+
+---
+
+## 👨‍💻 Author & Support
+
+**Goitom Kelem**
+
+Project: [WRF Domain Wizard](https://github.com/goikelem/WRF-domain-Wizard)
+
+If this tool helps your meteorological research or WRF workflow:
+- ⭐ Star the repository on GitHub.
+- 🍴 Fork the project and contribute improvements.
+- 🐛 Report bugs and suggest new features through GitHub Issues.
+
+**Draw your domains. Configure your grids. Generate your namelists. Prepare for WRF.** 🌦️
+```
