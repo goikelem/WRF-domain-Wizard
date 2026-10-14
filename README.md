@@ -2,9 +2,8 @@
 
 [![Live App](https://img.shields.io/badge/🚀_Live_App-Open_Wizard-2ea44f?style=for-the-badge)](https://goikelem.github.io/WRF-domain-Wizard/)
 [![GitHub Pages](https://img.shields.io/badge/GitHub_Pages-Online-blue?style=flat-square&logo=github)](https://goikelem.github.io/WRF-domain-Wizard/)
-![](https://img.shields.io/badge/WRF-4.x-orange?style=flat-square)
-![](https://img.shields.io/badge/WPS-Domain_Setup-purple?style=flat-square)
-![](https://img.shields.io/badge/Maps-Leaflet-green?style=flat-square&logo=leaflet)
+
+==**[Open the Domain wizard here](https://goikelem.github.io/WRF-domain-Wizard/)**==
 
 **WRF Domain Wizard** is a browser-based, interactive tool designed to simplify the setup of the Weather Research and Forecasting (WRF) model and its Preprocessing System (WPS). 
 
@@ -32,7 +31,7 @@ Instead of manually calculating coordinates and editing text files, users can **
 
 Follow these steps to configure your WRF simulation:
 
-1. **Launch the App:** Open the Live WRF Domain Wizard.
+1. **Launch the App:** Open the ==**[Open the Domain wizard here](https://goikelem.github.io/WRF-domain-Wizard/)**==.
 2. **Draw the Outer Domain:** Click and drag on the map to draw your outermost domain (**d01**).
 3. **Add Nests:** Add **d02**, **d03**, and additional nested domains as needed for your study.
 4. **Edit Domains:** Select a domain to move or resize it using the map handles. You can also fine-tune extents using the configuration table.
